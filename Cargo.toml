@@ -2,9 +2,10 @@
 name = "hashseek"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/prashantkhandelwal/hashseek"
 description = "Retrieve BitTorrent metadata from an infohash without downloading content"
 readme = "README.md"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 keywords = ["bittorrent", "torrent", "infohash", "dht", "magnet"]
 categories = ["command-line-utilities", "network-programming"]
 
