@@ -32,7 +32,7 @@ Add dependencies:
 
 ```toml
 [dependencies]
-hashseek = { version = "0.1.0", default-features = false }
+hashseek = { version = "0.1.1", default-features = false }
 anyhow = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
