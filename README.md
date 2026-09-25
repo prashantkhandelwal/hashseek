@@ -28,34 +28,70 @@ Use `--timeout <SECONDS>` to change the default 120-second lookup timeout.
 
 ## Use as a library
 
-Add the local project as a dependency:
+Add dependencies:
 
 ```toml
 [dependencies]
-hashseek = { path = "../hashseek", default-features = false }
+hashseek = { version = "0.1.0", default-features = false }
+anyhow = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-Then call `lookup`:
+The following example looks up a torrent, prints its summary, lists every file,
+and shows the peers encountered while retrieving the metadata:
 
 ```rust,no_run
+use std::time::Duration;
+
 use hashseek::{LookupOptions, lookup};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let options = LookupOptions {
+        timeout: Duration::from_secs(60),
+        ..LookupOptions::default()
+    };
+
     let torrent = lookup(
         "310ce0725f032b2cb78cfee4887299c41b073d20",
-        LookupOptions::default(),
+        options,
     )
     .await?;
 
-    println!("{:?}", torrent.name);
-    println!("{} files", torrent.files.len());
-    println!("{} discovered peers", torrent.discovered_peers.len());
+    println!(
+        "Name:             {}",
+        torrent.name.as_deref().unwrap_or("<unknown>")
+    );
+    println!("Infohash:         {}", torrent.info_hash);
+    println!("Total size:       {} bytes", torrent.total_size);
+    println!("Files:            {}", torrent.files.len());
+    println!("Pieces:           {}", torrent.total_pieces);
+    println!("Discovered peers: {}", torrent.discovered_peers.len());
+
+    match torrent.seeders {
+        Some(seeders) => println!("Seeders:          {seeders}"),
+        None => println!("Seeders:          unavailable"),
+    }
+
+    if !torrent.files.is_empty() {
+        println!("\nFiles:");
+        for (index, file) in torrent.files.iter().enumerate() {
+            println!("  {:>4}. {} ({} bytes)", index + 1, file.path, file.size);
+        }
+    }
+
+    if !torrent.discovered_peers.is_empty() {
+        println!("\nDiscovered peers:");
+        for peer in &torrent.discovered_peers {
+            println!("  {peer}");
+        }
+    }
+
     Ok(())
 }
 ```
 
-`TorrentInfo::seeders` is currently `None`. DHT peer discovery does not return
-swarm totals; obtaining a seeder count requires tracker scrape support and only
-represents the trackers that respond.
+`lookup` returns after retrieving metadata and does not download any payload
+files. `TorrentInfo::seeders` is currently `None` because DHT peer discovery
+does not provide swarm totals. Seeder counts require tracker scrape support and
+would only represent the trackers that respond.
